@@ -14,6 +14,27 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="recoloca-plus-capa.png">
+
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PY3D8GZBY3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-PY3D8GZBY3', {
+    'anonymize_ip': true
+  });
+
+  // Função helper para rastrear eventos customizados
+  function trackEvent(category, action, label) {
+    if (typeof gtag !== 'undefined') {
+      gtag('event', action, {
+        'event_category': category,
+        'event_label': label || ''
+      });
+    }
+  }
+</script>
 <style>
   :root {
     --azul: #1A3D7C;
@@ -2089,7 +2110,7 @@ function renderizarPainel(perfil) {
       b.links.forEach(l => {
         const pfClass = `pf-${l.tipo}`;
         const pfText = { linkedin: 'in', indeed: 'id', glassdoor: 'gd', gupy: 'gp', google: 'g' }[l.tipo] || l.tipo;
-        buscaHtml += `<a class="search-link" href="${l.url}" target="_blank"><div class="platform ${pfClass}">${pfText}</div><span>${b.label}</span></a>`;
+        buscaHtml += `<a class="search-link" href="${l.url}" target="_blank" onclick="trackEvent('Saida','clique_vaga_cargo','${l.tipo}')"><div class="platform ${pfClass}">${pfText}</div><span>${b.label}</span></a>`;
       });
     });
     buscaHtml += '</div>';
@@ -2101,7 +2122,7 @@ function renderizarPainel(perfil) {
       b.links.forEach(l => {
         const pfClass = `pf-${l.tipo}`;
         const pfText = { linkedin: 'in', indeed: 'id', gupy: 'gp' }[l.tipo] || l.tipo;
-        buscaHtml += `<a class="search-link" href="${l.url}" target="_blank"><div class="platform ${pfClass}">${pfText}</div><span>${b.label}</span></a>`;
+        buscaHtml += `<a class="search-link" href="${l.url}" target="_blank" onclick="trackEvent('Saida','clique_vaga_local','${l.tipo}')"><div class="platform ${pfClass}">${pfText}</div><span>${b.label}</span></a>`;
       });
     });
     buscaHtml += '</div>';
@@ -2113,7 +2134,7 @@ function renderizarPainel(perfil) {
       b.links.forEach(l => {
         const pfClass = `pf-${l.tipo}`;
         const pfText = { linkedin: 'in', indeed: 'id' }[l.tipo] || l.tipo;
-        buscaHtml += `<a class="search-link" href="${l.url}" target="_blank"><div class="platform ${pfClass}">${pfText}</div><span>${b.label}</span></a>`;
+        buscaHtml += `<a class="search-link" href="${l.url}" target="_blank" onclick="trackEvent('Saida','clique_vaga_ferramenta','${l.tipo}')"><div class="platform ${pfClass}">${pfText}</div><span>${b.label}</span></a>`;
       });
     });
     buscaHtml += '</div>';
@@ -2152,8 +2173,8 @@ function renderizarPainel(perfil) {
         <div class="empresa-nome">${e.nome}</div>
         <div class="empresa-info">${e.info}</div>
         <div class="empresa-links">
-          <a class="empresa-link" href="${e.site}" target="_blank">🌐 Site</a>
-          <a class="empresa-link" href="${e.linkedin}/jobs/" target="_blank">in Vagas</a>
+          <a class="empresa-link" href="${e.site}" target="_blank" onclick="trackEvent('Saida','clique_empresa_site','${escapeHtml(e.nome)}')">🌐 Site</a>
+          <a class="empresa-link" href="${e.linkedin}/jobs/" target="_blank" onclick="trackEvent('Saida','clique_empresa_linkedin','${escapeHtml(e.nome)}')">in Vagas</a>
         </div>
       </div>
     `).join('');
@@ -2209,6 +2230,8 @@ function copiarCarta(i) {
     const fb = document.getElementById('fb-' + i);
     fb.classList.add('show');
     setTimeout(() => fb.classList.remove('show'), 2000);
+    // Analytics: carta copiada
+    trackEvent('Engajamento', 'carta_copiada', cartas[i].titulo);
   });
 }
 
@@ -2231,6 +2254,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    // Analytics: tab visualizada
+    trackEvent('Navegacao', 'tab_clicada', btn.dataset.tab);
   });
 });
 
@@ -2295,6 +2320,9 @@ async function handleFile() {
     document.getElementById('cv-preview').textContent = cvText.substring(0, 500) + (cvText.length > 500 ? '...' : '');
 
     btnAnalisar.disabled = false;
+
+    // Analytics: CV carregado com sucesso
+    trackEvent('Engajamento', 'cv_carregado', ext);
   } catch (e) {
     document.getElementById('upload-error').innerHTML = `<div class="error-box">${escapeHtml(e.message)}</div>`;
     document.getElementById('upload-icon').textContent = '📤';
@@ -2311,6 +2339,9 @@ async function analisarPerfil() {
     alert('Carregue o currículo primeiro!');
     return;
   }
+
+  // Analytics: usuário clicou em gerar painel
+  trackEvent('Engajamento', 'painel_solicitado');
 
   const userInputs = {
     name: document.getElementById('user-name').value.trim(),
@@ -2345,6 +2376,11 @@ async function analisarPerfil() {
   analiseResultado = analisarPerfilData(cvText, story, userInputs);
   renderizarPainel(analiseResultado);
 
+  // Analytics: painel gerado com sucesso, registrar área detectada
+  const areaDetectada = analiseResultado.areaPrincipal ? AREAS[analiseResultado.areaPrincipal].label : 'nao_detectada';
+  trackEvent('Conversao', 'painel_gerado', areaDetectada);
+  trackEvent('Perfil', 'nivel_detectado', analiseResultado.nivel);
+
   // Mostrar resultado
   document.getElementById('screen-loading').classList.remove('active');
   document.getElementById('screen-result').classList.add('active');
@@ -2360,3 +2396,4 @@ function voltarFormulario() {
 
 </body>
 </html>
+
